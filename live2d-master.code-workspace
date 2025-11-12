@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../live2d-master 2/live2d_3"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "live2d-master"
+	}
+}

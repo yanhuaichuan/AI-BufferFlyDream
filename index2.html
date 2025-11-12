@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ButterFlyDream-智能体对话</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义幻橙幻蓝色系 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF8A5C', // 橙
+                        secondary: '#5C8AFF', // 蓝
+                        accent: '#FFD65C', // 橙黄
+                        dark: '#2A2740',
+                        light: '#FFFBFF',
+                        'dream-orange': '#FFB380',
+                        'dream-purple': '#80B3FF',
+                        'dream-blue': '#80E6FF',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'text-float': 'textFloat 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        textFloat: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 10px rgba(255, 138, 154, 0.4), 0 0 10px rgba(157, 138, 255, 0.4)' },
+                            '100%': { boxShadow: '0 0 20px rgba(255, 138, 154, 0.6), 0 0 20px rgba(157, 138, 255, 0.6)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .bg-dream {
+                background: linear-gradient(135deg, #FFFBFF 0%, #F5F0FF 100%);
+            }
+            .bg-dream-card {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .message-appear {
+                animation: messageAppear 0.4s ease-out forwards;
+            }
+            .panel-transition {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .splash-screen {
+                opacity: 1;
+                transition: opacity 1s ease-out, visibility 1s;
+            }
+            .splash-screen.fade-out {
+                opacity: 0;
+                visibility: hidden;
+            }
+            .agent-active {
+                background: linear-gradient(135deg, rgba(255, 138, 154, 0.1) 0%, rgba(157, 138, 255, 0.1) 100%);
+                border-left: 4px solid #FF8A9A;
+            }
+        }
+        
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-10px) rotate(120deg); }
+            66% { transform: translateY(5px) rotate(240deg); }
+        }
+        
+        @keyframes glow {
+            0% { 
+                box-shadow: 0 0 20px rgba(255, 138, 154, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(255, 138, 154, 0.6);
+                transform: scale(1.02);
+            }
+            100% { 
+                box-shadow: 0 0 20px rgba(255, 138, 154, 0.3);
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-glow {
+            animation: glow 3s ease-in-out infinite;
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-dream text-dark antialiased min-h-screen overflow-hidden">
+
+    <div class="flex h-screen max-h-screen overflow-hidden relative">
+        <!-- 背景装饰元素 -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div class="absolute -top-20 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" style="animation-delay: 0s;"></div>
+            <div class="absolute top-1/3 -right-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
+            <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float" style="animation-delay: 4s;"></div>
+            
+            <!-- 添加更多动态元素 -->
+            <div class="absolute top-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-dream-purple/20 to-dream-blue/20 rounded-full blur-2xl animate-float" style="animation-delay: 1s;"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-72 h-72 bg-gradient-to-r from-dream-orange/20 to-primary/20 rounded-full blur-2xl animate-float" style="animation-delay: 3s;"></div>
+        </div>
+
+        <!-- 左侧智能体列表区域 -->
+        <aside id="agent-panel" class="w-80 glass-effect shadow-lg panel-transition z-10 flex flex-col">
+            <!-- 头部信息 -->
+            <div class="p-5 border-b border-white/20">
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                    COSY-PLAY列表
+                </h1>
+                <div class="mt-3 relative">
+                    <input type="text" placeholder="搜索智能体..."
+                        class="w-full px-4 py-2 bg-white/50 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- 智能体列表 -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                <!-- 智能体项 -->
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 agent-active animate-fade-in-up">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-butterfly"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">梦梦</h3>
+                            <p class="text-sm text-gray-600 truncate">梦境解读专家</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.1s;">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-secondary to-accent flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-magic"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">幻幻</h3>
+                            <p class="text-sm text-gray-600 truncate">创意写作助手</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-gray-200 text-gray-600 px-2 py-1 rounded-full">离线</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.2s;">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-accent to-primary flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-graduation-cap"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">智智</h3>
+                            <p class="text-sm text-gray-600 truncate">学习辅导助手</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 5分钟前</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.3s;">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-dream-orange to-primary flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-heart"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">暖暖</h3>
+                            <p class="text-sm text-gray-600 truncate">情感陪伴助手</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 2小时前</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.4s;">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-dream-purple to-secondary flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-code"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">码码</h3>
+                            <p class="text-sm text-gray-600 truncate">编程开发助手</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-gray-200 text-gray-600 px-2 py-1 rounded-full">离线</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部操作 -->
+            <div class="p-4 border-t border-white/20">
+                <button
+                    class="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-xl hover:scale-105 animate-glow">
+                    <i class="fa fa-plus mr-2"></i>创建新智能体
+                </button>
+            </div>
+        </aside>
+
+        <!-- 右侧对话区域 -->
+        <main class="flex-1 flex flex-col overflow-hidden relative z-10">
+            <!-- 顶部导航 -->
+            <header class="flex items-center justify-between h-16 px-6 glass-effect shadow-sm animate-fade-in-up">
+                <div class="flex items-center">
+                    <button id="toggle-agent-panel"
+                        class="mr-4 text-gray-500 hover:text-primary transition-colors lg:hidden hover:scale-110 transition-transform duration-300">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <i class="fa fa-butterfly"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-dark">梦梦</h2>
+                            <p class="text-xs text-gray-600">梦境解读专家 · 在线</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- 简化顶部导航，只保留必要的功能 -->
+                </div>
+            </header>
+
+            <!-- 对话内容区域 -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide" id="chat-container">
+                <!-- 欢迎提示 -->
+                <div
+                    class="w-full max-w-3xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-sm text-gray-700 shadow-lg border border-white/40 animate-fade-in-up">
+                    <p>欢迎与梦梦对话！我是专业的梦境解读助手，可以帮你分析梦境、探索潜意识，并提供心理支持。</p>
+                </div>
+                
+                <!-- 消息列表容器 -->
+                <div id="messages-container"></div>
+                  <!-- 加载更多消息提示 -->
+                <div id="load-more-container" class="w-full max-w-3xl mx-auto text-center hidden">
+                    <button id="load-more-btn" class="px-4 py-2 bg-dream-card border border-white/30 rounded-xl text-gray-600 hover:bg-white/80 transition-all">
+                        加载更多消息
+                    </button>
+                </div>            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-6 border-t border-white/20 animate-fade-in-up">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex items-end space-x-4">
+                        <div class="flex-1 bg-dream-card rounded-2xl p-4 border border-white/30 shadow-sm hover:shadow-md focus-within:shadow-lg transition-all duration-300">
+                            <textarea id="message-input" placeholder="与梦梦对话..."
+                                class="w-full bg-transparent border-none outline-none resize-none text-dark placeholder-gray-500"
+                                rows="1" style="min-height: 24px; max-height: 120px;"></textarea>
+                            <div class="flex justify-between items-center mt-3">
+                                <div class="flex space-x-2">
+                                    
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button
+                                        class="px-4 py-2 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 transition-all duration-300 hover:shadow-md">
+                                        清除
+                                    </button>
+                                    <button
+                                        class="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-xl hover:scale-105 transition-all duration-300 animate-glow">
+                                        发送
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // API配置
+        const API_CONFIG = {
+            baseUrl: 'http://10.1.20.40:8002',
+            conversationId: '00036f29-2b44-45d2-b5f0-dc37bcAAAAA',
+            authToken: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImFwcElkIjoiNjg5YWE2ZWYwNmY2YzEyYmViYWExNmNmIiwiY2xpZW50SWQiOiI2N2U2NzM2ZDE1MmE0NWM0ODE5Y2RmNGEiLCJlbWFpbCI6InRlc3RAdGVzdC50ZXN0IiwiaWQiOiI2ODlhYTZlZjA2ZjZjMTJiZWJhYTE2Y2YiLCJvcGVuaWQiOm51bGwsInBob25lIjoiMTc3Nzc3Nzc3NzciLCJ0eXBlIjoidXNlciIsInVuaW9uaWQiOm51bGwsInVzZXJJZCI6IjY4OWFhNmVmMDZmNmMxMmJlYmFhMTZjZiIsInVzZXJuYW1lIjoidGVzdCJ9LCJleHAiOjE4OTQ4NzU3NzgsImlhdCI6MTc1ODg3NTc3OCwidWlkIjoxMjM0NX0.oFMPRZcQ6hB5lVvKOiAJAPX8iYHTpfy3VACF9IwtiiU'
+        };
+
+        // 分页状态
+        let currentPage = 1;
+        const pageSize = 10;
+        let isLoading = false;
+        let hasMoreMessages = true;
+
+        // 页面加载完成后隐藏启动画面并加载消息
+        window.addEventListener('load', function () {
+            setTimeout(() => {
+                setTimeout(() => {
+                    // 加载初始消息
+                    loadMessages();
+                },10);
+            }, 10);
+        });
+
+        // 获取消息列表API
+        async function getMessages(page = 1) {
+            try {
+                const url = `${API_CONFIG.baseUrl}/v1/conversations/${API_CONFIG.conversationId}/messages?page=${page}&page_size=${pageSize}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': API_CONFIG.authToken,
+                        'Accept': '*/*',
+                        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+                        'Host': '10.1.20.40:8002',
+                        'Connection': 'keep-alive'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    return data.data;
+                } else {
+                    throw new Error(data.message || 'API返回错误');
+                }
+            } catch (error) {
+                console.error('获取消息失败:', error);
+                showError('获取消息失败，请检查网络连接');
+                return null;
+            }
+        }
+
+        // 加载消息
+        async function loadMessages() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            // 显示加载状态
+            document.getElementById('messages-container').innerHTML = '<div class="w-full max-w-3xl mx-auto text-center py-8"><div class="inline-flex items-center space-x-2 text-gray-500"><div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div><span>加载消息中...</span></div></div>';
+
+            const data = await getMessages(1);
+            
+            if (data) {
+                const messages = data.list || [];
+                
+                // 更新分页状态
+                if (messages.length < pageSize) {
+                    hasMoreMessages = false;
+                    document.getElementById('load-more-container').classList.add('hidden');
+                } else {
+                    hasMoreMessages = true;
+                    document.getElementById('load-more-container').classList.remove('hidden');
+                }
+
+                // 渲染消息
+                renderMessages(messages);
+                
+                // 更新当前页码
+                currentPage = 1;
+                
+                // 滚动到底部
+                setTimeout(() => {
+                    document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                }, 100);
+            }
+            
+            isLoading = false;
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'w-full max-w-3xl mx-auto bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm';
+            errorDiv.innerHTML = `<div class="flex items-center space-x-2"><i class="fa fa-exclamation-triangle"></i><span>${message}</span></div>`;
+            document.getElementById('messages-container').appendChild(errorDiv);
+        }
+
+        // 渲染消息列表
+        function renderMessages(messages, prepend = false) {
+            const container = document.getElementById('messages-container');
+            
+            // 清空容器（如果不是追加模式）
+            if (!prepend) {
+                container.innerHTML = '';
+            }
+            
+            // 对消息进行排序（最新的在后）
+            const sortedMessages = messages.sort((a, b) => {
+                return new Date(a.created_at) - new Date(b.created_at);
+            });
+            
+            // 创建消息元素
+            sortedMessages.forEach((message, index) => {
+                const messageElement = createMessageElement(message, index);
+                
+                if (prepend) {
+                    container.insertBefore(messageElement, container.firstChild);
+                } else {
+                    container.appendChild(messageElement);
+                }
+            });
+            
+            // 如果不是追加模式，滚动到底部
+            if (!prepend) {
+                setTimeout(() => {
+                    document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                }, 100);
+            }
+        }
+
+        // 创建单个消息元素
+        function createMessageElement(message, index) {
+            const messageDiv = document.createElement('div');
+            
+            // 设置消息元素的ID
+            if (message.id) {
+                messageDiv.id = message.id;
+            }
+            
+            // 根据角色设置不同的样式
+            if (message.role === 'user') {
+                // 用户消息
+                messageDiv.className = 'w-full max-w-3xl mx-auto flex items-start justify-end message-appear';
+                messageDiv.style.animationDelay = `${index * 0.1}s`;
+                
+                messageDiv.innerHTML = `
+                    <div class="flex-1 max-w-lg ml-auto">
+                        <div class="bg-white rounded-2xl rounded-tr-none p-4 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-xl">
+                            <p class="text-gray-800">${escapeHtml(message.content)}</p>
+                        </div>
+                        <div class="flex justify-end mt-2 text-xs text-gray-500">
+                            <span>${formatTime(message.created_at)}</span>
+                        </div>
+                    </div>
+                    <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-10 h-10 rounded-full ml-3 flex-shrink-0 border-2 border-white shadow-sm transition-transform duration-300 hover:scale-105">
+                `;
+            } else if (message.role === 'assistant') {
+                // 助手消息
+                messageDiv.className = 'w-full max-w-3xl mx-auto flex items-start message-appear';
+                messageDiv.style.animationDelay = `${index * 0.1}s`;
+                
+                messageDiv.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-secondary to-primary flex items-center justify-center text-white mr-3 flex-shrink-0 shadow-sm transition-transform duration-300 hover:scale-105">
+                        <i class="fa fa-butterfly"></i>
+                    </div>
+                    <div class="flex-1 max-w-lg">
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl rounded-tl-none p-4 shadow-lg border border-white/40 transition-all duration-300 hover:shadow-xl">
+                            <p class="text-gray-800">${escapeHtml(message.content)}</p>
+                        </div>
+                        <div class="flex justify-start mt-2 text-xs text-gray-500">
+                            <span>${formatTime(message.created_at)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return messageDiv;
+        }
+
+        // HTML转义函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            
+            try {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) {
+                    return '刚刚';
+                } else if (diffMins < 60) {
+                    return `${diffMins}分钟前`;
+                } else if (diffHours < 24) {
+                    return `${diffHours}小时前`;
+                } else if (diffDays < 7) {
+                    return `${diffDays}天前`;
+                } else {
+                    return date.toLocaleDateString('zh-CN');
+                }
+            } catch (error) {
+                return timestamp;
+            }
+        }
+
+        // 按钮事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    loadMoreMessages();
+                });
+            }
+        });
+
+        // 清除按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('清除')) {
+                button.addEventListener('click', function() {
+                    const textarea = document.querySelector('#message-input');
+                    if (textarea) {
+                        textarea.value = '';
+                        textarea.style.height = 'auto';
+                        textarea.style.height = textarea.scrollHeight + 'px';
+                    }
+                });
+            }
+        });
+
+        // 发送按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('发送')) {
+                button.addEventListener('click', function() {
+                    const textarea = document.querySelector('#message-input');
+                    if (textarea && textarea.value.trim()) {
+                        sendMessage(textarea.value.trim());
+                    }
+                });
+            }
+        });
+
+        // 发送消息函数
+        async function sendMessage(message) {
+            if (!message.trim()) return;
+
+            // 禁用发送按钮，防止重复发送
+            let sendButton = null;
+            document.querySelectorAll('button').forEach(button => {
+                if (button.textContent.includes('发送')) {
+                    sendButton = button;
+                }
+            });
+            
+            if (sendButton) {
+                sendButton.disabled = true;
+                sendButton.classList.add('opacity-70', 'cursor-not-allowed');
+            }
+
+            try {
+                // 显示用户消息
+                const userMessage = {
+                    id: Date.now(),
+                    content: message,
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+
+                // 将用户消息添加到消息列表
+                const messagesContainer = document.getElementById('messages-container');
+                if (messagesContainer) {
+                    const messageElement = createMessageElement(userMessage);
+                    messagesContainer.appendChild(messageElement);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+
+                // 调用API发送消息
+                const response = await fetch(`${API_CONFIG.baseUrl}/v1/conversations/${API_CONFIG.conversationId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': API_CONFIG.authToken
+                    },
+                    body: JSON.stringify({
+                        content: message,
+                        role: 'user',
+                        type: 'text'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.code === 200 && data.data && data.data.id) {
+                    // 消息发送成功，调用AI生成接口获取回复
+                    console.log('用户消息发送成功，messageId:', data.data.id);
+                    
+                    // 清除输入框内容
+                    const textarea = document.querySelector('#message-input');
+                    if (textarea) {
+                        textarea.value = '';
+                        textarea.style.height = 'auto';
+                        textarea.style.height = textarea.scrollHeight + 'px';
+                    }
+                    
+                    // 调用AI生成接口获取回复
+                    await callAIGenerateAPI(data.data.id);
+                    
+                } else {
+                    throw new Error(data.message || '发送消息失败');
+                }
+
+            } catch (error) {
+                console.error('发送消息出错:', error);
+                showError('发送消息失败，请稍后重试');
+            } finally {
+                // 恢复发送按钮状态
+                if (sendButton) {
+                    setTimeout(() => {
+                        sendButton.disabled = false;
+                        sendButton.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }, 1000);
+                }
+            }
+        }
+
+        // 调用AI生成接口获取回复
+        async function callAIGenerateAPI(messageId) {
+            // 显示AI回复的占位符
+            const assistantMessageId = 'assistant-message-' + Date.now();
+            const messagesContainer = document.getElementById('messages-container');
+            
+            if (messagesContainer) {
+                const assistantMessage = {
+                    id: assistantMessageId,
+                    content: '思考中...',
+                    role: 'assistant',
+                    created_at: new Date().toISOString()
+                };
+                
+                const messageElement = createMessageElement(assistantMessage);
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            try {
+                console.log('调用AI生成接口，messageId:', messageId);
+
+                // 调用AI生成接口（使用流式响应）
+                const response = await fetch('http://10.1.20.40:8003/v1/chat/stream/game/text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': API_CONFIG.authToken
+                    },
+                    body: JSON.stringify({
+                        messageId: messageId,
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let fullResponse = '';
+                let isFinished = false;
+
+                function readStream() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            // 完成处理
+                            isFinished = true;
+                            return;
+                        }
+
+                        // 处理接收到的数据
+                        const chunk = decoder.decode(value, { stream: true });
+                        console.log('接收到数据块:', chunk);
+
+                        // 处理标准SSE格式响应（data: {json}）
+                        const lines = chunk.split('\n');
+                        for (const line of lines) {
+                            const trimmedLine = line.trim();
+                            if (!trimmedLine) continue;
+
+                            // 检查是否是标准SSE data事件格式
+                            if (trimmedLine.startsWith('data:')) {
+                                // 提取JSON部分（去掉'data: '前缀）
+                                const jsonStr = trimmedLine.substring(5).trim();
+                                
+                                try {
+                                    // 解析JSON数据
+                                    const data = JSON.parse(jsonStr);
+                                    console.log('解析成功的数据:', data);
+
+                                    // 检查是否有content字段
+                                    if (data.content && !data.isFinished) {
+                                        // 累加响应内容
+                                        fullResponse += data.content;
+                                        console.log('累计响应内容:', fullResponse);
+
+                                        // 更新AI回复内容
+                                        const assistantMessageElement = document.getElementById(assistantMessageId);
+                                        if (assistantMessageElement) {
+                                            const contentElement = assistantMessageElement.querySelector('p.text-gray-800');
+                                            if (contentElement) {
+                                                contentElement.textContent = fullResponse;
+                                            }
+                                        }
+                                    }
+
+                                    // 检查是否完成
+                                    if (data.isFinished) {
+                                        isFinished = true;
+                                        console.log('接收到完成标记');
+                                        
+                                        // 完成时更新UI状态
+                                        const assistantMessageElement = document.getElementById(assistantMessageId);
+                                        if (assistantMessageElement) {
+                                            // 移除思考状态
+                                            const thinkingElement = assistantMessageElement.querySelector('.thinking-indicator');
+                                            if (thinkingElement) {
+                                                thinkingElement.remove();
+                                            }
+                                            
+                                            // 确保内容正确显示
+                                            const contentElement = assistantMessageElement.querySelector('p.text-gray-800');
+                                            if (contentElement) {
+                                                contentElement.textContent = fullResponse;
+                                            }
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('解析JSON错误:', e, '原始数据:', jsonStr);
+                                }
+                            } else {
+                                // 尝试直接解析整行作为JSON（备用方案）
+                                try {
+                                    const data = JSON.parse(trimmedLine);
+                                    console.log('直接解析JSON成功:', data);
+
+                                    if (data.content && !data.isFinished) {
+                                        fullResponse += data.content;
+                                        console.log('累计响应内容:', fullResponse);
+
+                                        // 更新AI回复内容
+                                        const assistantMessageElement = document.getElementById(assistantMessageId);
+                                        if (assistantMessageElement) {
+                                            const contentElement = assistantMessageElement.querySelector('p.text-gray-800');
+                                            if (contentElement) {
+                                                contentElement.textContent = fullResponse;
+                                            }
+                                        }
+                                    }
+
+                                    if (data.isFinished) {
+                                        isFinished = true;
+                                        console.log('接收到完成标记');
+                                    }
+                                } catch (e) {
+                                    console.error('直接解析失败:', e, '原始数据:', trimmedLine);
+                                }
+                            }
+                        }
+
+                        // 继续读取流
+                        return readStream();
+                    });
+                }
+
+                return readStream();
+                
+            } catch (error) {
+                console.error('调用AI生成接口出错:', error);
+                showError('获取AI回复失败，请稍后重试');
+                
+                // 更新AI回复为错误信息
+                const assistantMessageElement = document.getElementById(assistantMessageId);
+                if (assistantMessageElement) {
+                    const contentElement = assistantMessageElement.querySelector('p.text-gray-800');
+                    if (contentElement) {
+                        contentElement.textContent = '抱歉，获取回复时出现错误';
+                        contentElement.classList.add('text-red-500');
+                    }
+                }
+            }
+        }
+
+        // 滚动加载检测
+        let scrollTimeout;
+        document.getElementById('chat-container').addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                checkScrollForLoadMore();
+            }, 100);
+        });
+
+        // 检查是否需要加载更多消息
+        function checkScrollForLoadMore() {
+            const container = document.getElementById('chat-container');
+            const scrollTop = container.scrollTop;
+            
+            // 如果滚动到顶部附近且有更多消息，加载更多
+            if (scrollTop < 100 && hasMoreMessages && !isLoading) {
+                loadMoreMessages();
+            }
+        }
+
+        // 加载更多消息
+        async function loadMoreMessages() {
+            if (isLoading || !hasMoreMessages) return;
+            
+            isLoading = true;
+            const nextPage = currentPage + 1;
+            
+            // 显示加载更多状态
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const originalText = loadMoreBtn.innerHTML;
+            loadMoreBtn.innerHTML = '<div class="inline-flex items-center space-x-2"><div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div><span>加载中...</span></div>';
+            loadMoreBtn.disabled = true;
+            
+            // 记录当前滚动位置
+            const container = document.getElementById('chat-container');
+            const firstMessage = container.querySelector('#messages-container > div:first-child');
+            const scrollOffset = firstMessage ? firstMessage.offsetTop - container.scrollTop : 0;
+            
+            try {
+                const data = await getMessages(nextPage);
+                
+                if (data) {
+                    const messages = data.list || [];
+                    
+                    // 更新分页状态
+                    if (messages.length < pageSize) {
+                        hasMoreMessages = false;
+                        document.getElementById('load-more-container').classList.add('hidden');
+                    }
+                    
+                    if (messages.length > 0) {
+                        // 渲染消息到顶部
+                        renderMessages(messages, true);
+                        
+                        // 更新当前页码
+                        currentPage = nextPage;
+                        
+                        // 恢复滚动位置
+                        if (firstMessage) {
+                            const newFirstMessage = container.querySelector('#messages-container > div:first-child');
+                            if (newFirstMessage) {
+                                container.scrollTop = newFirstMessage.offsetTop - scrollOffset;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('加载更多消息失败:', error);
+                showError('加载更多消息失败，请重试');
+            } finally {
+                // 恢复按钮状态
+                loadMoreBtn.innerHTML = originalText;
+                loadMoreBtn.disabled = false;
+                isLoading = false;
+            }
+        }
+
+        // 智能体选择功能
+        document.querySelectorAll('.agent-item').forEach(item => {
+            item.addEventListener('click', function () {
+                // 移除所有active状态
+                document.querySelectorAll('.agent-item').forEach(i => {
+                    i.classList.remove('agent-active');
+                });
+                // 添加当前active状态
+                this.classList.add('agent-active');
+
+                // 更新顶部智能体信息
+                const agentName = this.querySelector('h3').textContent;
+                const agentDesc = this.querySelector('p').textContent;
+                document.querySelector('header h2').textContent = agentName;
+                document.querySelector('header p').textContent = agentDesc + ' · 在线';
+
+                // 切换智能体时刷新消息列表
+                loadMessages();
+            });
+        });
+
+        // 响应式面板切换
+        document.getElementById('toggle-agent-panel').addEventListener('click', function () {
+            document.getElementById('agent-panel').classList.toggle('hidden');
+        });
+
+        // 文本输入框自动调整高度
+        const textarea = document.getElementById('message-input');
+        textarea.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+
+
+        // 清除按钮功能
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent === '清除') {
+                button.addEventListener('click', function() {
+                    textarea.value = '';
+                    textarea.style.height = 'auto';
+                });
+            }
+        });
+
+        // 消息发送功能
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent === '发送') {
+                button.addEventListener('click', function () {
+                    const message = textarea.value.trim();
+                    if (message) {
+                        // 添加用户消息
+                        const chatContainer = document.getElementById('chat-container');
+                        const userMessage = document.createElement('div');
+                        userMessage.className = 'w-full max-w-3xl mx-auto flex items-start justify-end message-appear';
+                        userMessage.innerHTML = `
+                    <div class="flex-1 max-w-lg ml-auto">
+                        <div class="bg-gradient-to-r from-primary to-secondary text-white rounded-2xl rounded-tr-none p-4 shadow-md relative">
+                            <p>${message}</p>
+                            <div class="absolute -bottom-2 right-4 w-3 h-3 bg-gradient-to-r from-primary to-secondary transform rotate-45"></div>
+                        </div>
+                        <div class="flex justify-end mt-3 space-x-3">
+                            <button class="text-gray-500 hover:text-primary text-xs transition-colors">
+                                <i class="fa fa-copy"></i>
+                            </button>
+                            <button class="text-gray-500 hover:text-primary text-xs transition-colors">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-10 h-10 rounded-full ml-3 flex-shrink-0 border-2 border-white shadow-sm">
+                `;
+                        chatContainer.appendChild(userMessage);
+
+                        // 清空输入框
+                        textarea.value = '';
+                        textarea.style.height = 'auto';
+
+                        // 滚动到底部
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                        // 模拟智能体回复
+                        setTimeout(() => {
+                            const agentMessage = document.createElement('div');
+                            agentMessage.className = 'w-full max-w-3xl mx-auto flex items-start message-appear';
+                            agentMessage.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-secondary to-primary flex items-center justify-center text-white mr-3 flex-shrink-0 shadow-sm">
+                            <i class="fa fa-butterfly"></i>
+                        </div>
+                        <div class="flex-1 max-w-lg">
+                            <div class="bg-dream-card border border-white/30 rounded-2xl rounded-tl-none p-4 shadow-md relative">
+                                <p>这是一个模拟回复。在实际应用中，这里会显示智能体的真实回复内容。</p>
+                                <div class="absolute -bottom-2 left-4 w-3 h-3 bg-white border border-white/30 transform rotate-45"></div>
+                            </div>
+                            <div class="flex justify-start mt-3 space-x-3">
+                                <button class="text-gray-500 hover:text-secondary text-xs transition-colors">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                                <button class="text-gray-500 hover:text-secondary text-xs transition-colors">
+                                    <i class="fa fa-download"></i>
+                                </button>
+                                <button class="text-gray-500 hover:text-secondary text-xs transition-colors">
+                                    <i class="fa fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                            chatContainer.appendChild(agentMessage);
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }, 1000);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

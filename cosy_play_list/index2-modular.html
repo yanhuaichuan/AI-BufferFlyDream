@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ButterFlyDream-智能体对话</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- 配置Tailwind自定义幻橙幻蓝色系 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF8A5C', // 橙
+                        secondary: '#5C8AFF', // 蓝
+                        accent: '#FFD65C', // 橙黄
+                        dark: '#2A2740',
+                        light: '#FFFBFF',
+                        'dream-orange': '#FFB380',
+                        'dream-purple': '#80B3FF',
+                        'dream-blue': '#80E6FF',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'text-float': 'textFloat 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        textFloat: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 10px rgba(255, 138, 154, 0.4), 0 0 10px rgba(157, 138, 255, 0.4)' },
+                            '100%': { boxShadow: '0 0 20px rgba(255, 138, 154, 0.6), 0 0 20px rgba(157, 138, 255, 0.6)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .bg-dream {
+                background: linear-gradient(135deg, #FFFBFF 0%, #F5F0FF 100%);
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .message-appear {
+                animation: messageAppear 0.4s ease-out forwards;
+            }
+            .panel-transition {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .splash-screen {
+                opacity: 1;
+                transition: opacity 1s ease-out, visibility 1s;
+            }
+            .splash-screen.fade-out {
+                opacity: 0;
+                visibility: hidden;
+            }
+            .agent-active {
+                background: linear-gradient(135deg, rgba(255, 138, 154, 0.1) 0%, rgba(157, 138, 255, 0.1) 100%);
+                border-left: 4px solid #FF8A9A;
+            }
+        }
+        
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-dream text-dark antialiased min-h-screen overflow-hidden">
+
+    <div class="flex h-screen max-h-screen overflow-hidden relative">
+        <!-- 背景装饰元素 -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div class="absolute -top-20 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float"
+                style="animation-delay: 0s;"></div>
+            <div class="absolute top-1/3 -right-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float"
+                style="animation-delay: 2s;"></div>
+            <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float"
+                style="animation-delay: 4s;"></div>
+
+            <!-- 添加更多动态元素 -->
+            <div class="absolute top-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-dream-purple/20 to-dream-blue/20 rounded-full blur-2xl animate-float"
+                style="animation-delay: 1s;"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-72 h-72 bg-gradient-to-r from-dream-orange/20 to-primary/20 rounded-full blur-2xl animate-float"
+                style="animation-delay: 3s;"></div>
+        </div>
+
+        <!-- 左侧智能体列表区域 -->
+        <aside id="agent-panel" class="w-80 glass-effect shadow-lg panel-transition z-10 flex flex-col">
+            <!-- 头部信息 -->
+            <div class="p-5 border-b border-white/20">
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                    COSY-PLAY列表
+                </h1>
+                <div class="mt-3 relative">
+                    <input type="text" placeholder="搜索智能体..."
+                        class="w-full px-4 py-2 bg-white/50 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- 智能体列表 -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                <!-- 智能体项 -->
+                <!-- <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    data-conversation-id="00036f29-2b44-45d2-b5f0-dc37bcAAAAA"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_41fcddb3-9ac4-4e.png">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white shadow-lg">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_41fcddb3-9ac4-4e.png" alt="梦境管理大法师" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">梦境大法师-梦梦</h3>
+                            <p class="text-sm text-gray-600">智能对话助手</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div> -->
+
+                <!-- 新增智能体项
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.4s;"
+                    data-conversation-id="94ccc2fd-582f-488c-b3c5-8abab327e12c"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_bfc1ae0b-0285-4f.png">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_bfc1ae0b-0285-4f.png" alt="霸道总裁" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">霸道总裁-顾淮瑾</h3>
+                            <p class="text-sm text-gray-600">商业决策与领导力指导</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.5s;"
+                    data-conversation-id="29a72bca-3f5c-4f60-be05-f3942cca7f27"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_e83c39d9-e1e8-46.png">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_e83c39d9-e1e8-46.png" alt="青春美少男" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">青春美少男-林旭阳</h3>
+                            <p class="text-sm text-gray-600">青春活力与时尚潮流</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div>
+
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.6s;"
+                    data-conversation-id="0628d4d2-2269-4fd1-89da-12a334b03f78"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_1abcb051-484f-42.png">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/10/22/file_1abcb051-484f-42.png" alt="性感御姐" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">性感御姐-玖玖</h3>
+                            <p class="text-sm text-gray-600">情感咨询与心理疏导</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div> -->
+
+                <!-- 辟邪 -->
+                <div
+                    class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 agent-active animate-fade-in-up"
+                    style="animation-delay: 0.6s;"
+                    data-agent-id="bdb294a5-a509-4312-8b87-ae616fcd8c56"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/08/11/file_ae9553fc-ee3f-46.png">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/08/11/file_ae9553fc-ee3f-46.png"
+                                alt="辟邪" class="w-10 h-10 rounded-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">辟邪</h3>
+                            <p class="text-sm text-gray-600 truncate">驱邪避凶，守护平安</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div>
+
+                <div class="agent-item p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-white/40 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white/90 animate-fade-in-up"
+                    style="animation-delay: 0.5s;" data-agent-id="422cd3cd-33cf-4a08-a2cb-f01f9238d12a"
+                    data-agent-image="https://download.xinbankeji.com/xbxcx/image/2025/08/11/file_edff42b0-3419-47.png">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-110">
+                            <img src="https://download.xinbankeji.com/xbxcx/image/2025/08/11/file_edff42b0-3419-47.png"
+                                alt="天禄" class="w-10 h-10 rounded-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-dark">天禄</h3>
+                            <p class="text-sm text-gray-600 truncate">招财进宝，福气满满</p>
+                        </div>
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">在线</span>
+                        <span class="ml-2">最后活跃: 刚刚</span>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+
+            <!-- 底部操作区域 -->
+            <div class="p-4 border-t border-white/20">
+                <button
+                    class="w-full px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+                    <i class="fa fa-plus mr-2"></i>创建新智能体
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主聊天区域 -->
+        <main class="flex-1 flex flex-col relative z-10 min-h-0">
+            <!-- 顶部导航栏 -->
+            <header class="glass-effect shadow-sm border-b border-white/20 p-4 flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="toggle-agent-panel"
+                            class="lg:hidden p-2 rounded-lg bg-white/50 hover:bg-white/70 transition-colors">
+                            <i class="fa fa-bars text-dark"></i>
+                        </button>
+                        <!-- 智能体头像 -->
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+                            <img id="chat-agent-avatar"
+                                src="https://download.xinbankeji.com/xbxcx/image/2025/08/11/file_ae9553fc-ee3f-46.png"
+                                alt="智能体头像" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h2 id="chat-agent-name" class="text-lg font-semibold text-dark">辟邪</h2>
+                            <p id="chat-agent-desc" class="text-sm text-gray-600">驱邪避凶，守护平安 · 在线</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="p-2 rounded-lg bg-white/50 hover:bg-white/70 transition-colors">
+                            <i class="fa fa-cog text-dark"></i>
+                        </button>
+                        <button class="p-2 rounded-lg bg-white/50 hover:bg-white/70 transition-colors">
+                            <i class="fa fa-question-circle text-dark"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 聊天消息容器 -->
+            <div id="chat-container" class="flex-1 flex flex-col min-h-0">
+                <!-- 加载更多按钮容器 -->
+                <div id="load-more-container" class="text-center p-4 flex-shrink-0 hidden">
+                    <button id="load-more-btn"
+                        class="px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg border border-white/40 text-sm text-gray-600 hover:bg-white/90 transition-colors">
+                        加载更多消息
+                    </button>
+                </div>
+
+                <!-- 消息列表容器 -->
+                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- 消息将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-white/20 bg-white/50 backdrop-blur-sm flex-shrink-0">
+                <div class="max-w-4xl mx-auto">
+                    <div class="relative">
+                        <textarea id="message-input" placeholder="输入消息..."
+                            class="w-full px-4 py-3 pr-24 rounded-2xl resize-vertical bg-white/90 backdrop-blur-sm border border-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 min-h-[60px] max-h-[200px]"
+                            rows="3"></textarea>
+
+                        <!-- 按钮容器 - 集成在文本框内 -->
+                        <div class="absolute right-2 bottom-2 flex space-x-2">
+                            <button id="clear-btn"
+                                class="px-3 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/40 text-gray-600 hover:bg-white hover:shadow-md transition-all duration-300 text-sm">
+                                清除
+                            </button>
+                            <button id="send-btn"
+                                class="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 text-sm">
+                                发送
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模块化JavaScript引用 -->
+    <script type="module">
+        import { initializeEventListeners } from './js/events.js';
+        import { loadMessages } from './js/messageManager.js';
+
+        // 页面加载完成后初始化 - 事件监听器已经在events.js中处理，这里只加载消息
+        document.addEventListener('DOMContentLoaded', function () {
+            // 页面加载完成后隐藏启动画面并加载消息
+            setTimeout(() => {
+                // 加载初始消息
+                loadMessages();
+            }, 100);
+        });
+    </script>
+
+</body>
+
+</html>

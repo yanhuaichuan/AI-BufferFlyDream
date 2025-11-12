@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ButterFlyDream-世界</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Live2D相关脚本 -->
+    <script src="js/LAppDefine.js"></script>
+    <script src="js/live2d.js"></script>
+    <script src="js/live2d-extensions.js"></script>
+    <!-- 音频修复脚本 -->
+    <script src="audio-fix.js"></script>
+
+    <!-- 配置Tailwind自定义梦幻配色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF8A9A', // 梦幻粉
+                        secondary: '#9D8AFF', // 梦幻紫
+                        accent: '#8AEEFF', // 梦幻蓝
+                        dark: '#2A2740',
+                        light: '#FFFBFF',
+                        'dream-pink': '#FFD6E0',
+                        'dream-purple': '#E6D6FF',
+                        'dream-blue': '#D6F0FF',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'text-float': 'textFloat 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        textFloat: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 10px rgba(255, 138, 154, 0.4), 0 0 10px rgba(157, 138, 255, 0.4)' },
+                            '100%': { boxShadow: '0 0 20px rgba(255, 138, 154, 0.6), 0 0 20px rgba(157, 138, 255, 0.6)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .bg-dream {
+                background: linear-gradient(135deg, #FFFBFF 0%, #F5F0FF 100%);
+            }
+            .bg-dream-card {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .message-appear {
+                animation: messageAppear 0.4s ease-out forwards;
+            }
+            .panel-transition {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .splash-screen {
+                opacity: 1;
+                transition: opacity 1s ease-out, visibility 1s;
+            }
+            .splash-screen.fade-out {
+                opacity: 0;
+                visibility: hidden;
+            }
+            
+            /* Live2D基础效果 */
+            .motion-effect {
+                transition: all 0.3s ease-in-out;
+            }
+        }
+        
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-dream text-dark antialiased min-h-screen overflow-hidden">
+    <!-- 初始加载图片 -->
+    <div id="splash-screen" class="splash-screen fixed inset-0 z-50 flex items-center justify-center">
+        <div class="relative w-full h-full">
+            <img src="https://pic.rmb.bdstatic.com/bjh/news/058cac8978d21d48bee74120df6585d9.png" alt="初始加载图"
+                class="w-full h-full object-cover">
+            <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
+                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 text-shadow-lg animate-text-float">
+                    ButterFlyDream-世界
+                </h1>
+                <p class="text-xl md:text-2xl text-white text-shadow-lg animate-text-float"
+                    style="animation-delay: 0.5s">
+                    梦中等着你
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col h-screen max-h-screen overflow-hidden relative">
+        <!-- 背景装饰元素 -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div class="absolute -top-20 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+            <div class="absolute top-1/3 -right-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- 顶部导航 -->
+        <header class="flex items-center justify-between h-16 px-4 md:px-6 glass-effect shadow-sm z-10">
+            <div class="flex items-center">
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                    ButterFlyDream
+                </h1>
+            </div>
+            <div class="flex items-center space-x-5">
+                <button class="text-gray-500 hover:text-secondary transition-colors">
+                    <i class="fa fa-search"></i>
+                </button>
+                <button class="text-gray-500 hover:text-primary transition-colors">
+                    <i class="fa fa-history"></i>
+                </button>
+                <button class="text-gray-500 hover:text-secondary transition-colors relative">
+                    <i class="fa fa-bell-o"></i>
+                    <span
+                        class="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-white text-xs flex items-center justify-center">2</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 中间Live2D区域 - 移到AI回答区域上方 -->
+        <div class="flex-1 flex items-center justify-center p-4 relative z-10" style="height: 85%;">
+            <div class="w-full max-w-2xl">
+                <!-- 模型交互控制 -->
+                <!-- <div class="mt-4">
+                    <div class="flex justify-center space-x-6">
+                        <button id="expression-btn" class="w-10 h-10 rounded-full bg-dream-pink/50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-md" title="切换表情">
+                            <i class="fa fa-smile-o"></i>
+                        </button>
+                        <button id="voice-btn" class="w-10 h-10 rounded-full bg-dream-purple/50 text-secondary flex items-center justify-center hover:bg-secondary hover:text-white transition-all shadow-md" title="语音交互">
+                            <i class="fa fa-volume-up"></i>
+                        </button>
+                        <button id="motion-btn" class="w-10 h-10 rounded-full bg-dream-blue/50 text-accent flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-md" title="切换动作">
+                            <i class="fa fa-refresh"></i>
+                        </button>
+                    </div>
+                </div> -->
+                <!-- 模型名称标注 -->
+                <div class="mb-4 text-center">
+                    <h2
+                        class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary animate-text-float">
+                        梦梦
+                    </h2>
+                </div>
+
+                <div
+                    class="w-full h-full max-w-[800px] mx-auto flex items-center justify-center relative animate-float">
+                    <!-- Live2D模型区域 -->
+                    <div
+                        class="w-full h-full rounded-2xl overflow-hidden shadow-xl border border-white/30 transform transition-all hover:scale-[1.02] bg-gradient-to-b from-dream-pink/30 to-dream-purple/30 relative">
+                        <!-- Live2D Canvas -->
+                        <canvas id="live2d" class="w-full h-full object-contain relative z-10"></canvas>
+                        <!-- 梦幻装饰元素 -->
+                        <div
+                            class="absolute top-6 left-6 w-10 h-10 bg-primary/30 rounded-full blur-xl animate-pulse-slow">
+                        </div>
+                        <div class="absolute bottom-10 right-8 w-12 h-12 bg-secondary/30 rounded-full blur-xl animate-pulse-slow"
+                            style="animation-delay: 1s"></div>
+                        <div class="absolute top-1/2 left-4 w-8 h-8 bg-accent/20 rounded-full blur-lg animate-pulse-slow"
+                            style="animation-delay: 2s"></div>
+                        <div class="absolute bottom-1/3 left-8 w-6 h-6 bg-primary/20 rounded-full blur-md animate-pulse-slow"
+                            style="animation-delay: 0.5s"></div>
+
+                        <!-- Live2D消息弹出框 -->
+                        <div id="live2d-message-bubble"
+                            class="absolute top-10 left-1/2 transform -translate-x-1/2 bg-pink-50/95 text-purple-800 px-8 py-6 rounded-2xl shadow-lg border-2 border-pink-200 max-w-[98%] w-[98%] opacity-0 pointer-events-none transition-all duration-300 z-50">
+                            <p id="live2d-message-text" class="text-base font-medium leading-relaxed"></p>
+                        </div>
+
+                        <!-- 用户询问消息弹出框 -->
+                        <div id="live2d-user-message-bubble"
+                            class="absolute bottom-20 right-10 bg-gradient-to-r from-primary to-secondary text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-lg max-w-[70%] opacity-0 pointer-events-none transition-all duration-300 z-20">
+                            <p id="live2d-user-message-text" class="text-sm font-medium leading-relaxed"></p>
+                        </div>
+                    </div>
+                    <!-- 悬浮装饰 -->
+                    <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-accent/40 flex items-center justify-center text-white text-xs shadow-md animate-float"
+                        style="animation-delay: 1s">
+                        <i class="fa fa-star"></i>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- 用户输入区域 -->
+        <footer class="border-t border-white/20 glass-effect p-1 shadow-[0_-1px_3px_rgba(0,0,0,0.03)] z-10">
+            <div class="max-w-3xl mx-auto">
+                <div class="relative">
+                    <textarea id="message-input"
+                        class="w-full pr-32 pl-3 py-2 rounded-2xl border border-white/50 bg-white/70 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all resize-none min-h-[80px] shadow-sm"
+                        placeholder="分享你的梦境..."></textarea>
+
+
+                    <!-- 发送按钮 -->
+                    <button id="send-btn"
+                        class="absolute right-3 bottom-2 bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-white px-4 py-1.5 rounded-xl font-medium transition-all shadow-md hover:shadow-lg animate-glow text-sm">
+                        发送
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 text-center mt-2">
+                    所有梦境都值得被倾听与理解
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 初始加载图片处理
+        document.addEventListener('DOMContentLoaded', function () {
+            // 2秒后隐藏初始图片
+            setTimeout(function () {
+                const splashScreen = document.getElementById('splash-screen');
+                splashScreen.classList.add('fade-out');
+
+                // 检查Live2D库加载状态
+                console.log('检查Live2D库状态:');
+                console.log('loadlive2d函数存在:', typeof loadlive2d !== 'undefined');
+                console.log('window.loadlive2d函数存在:', typeof window.loadlive2d !== 'undefined');
+                console.log('LAppDefine存在:', typeof LAppDefine !== 'undefined');
+
+                // 加载Live2D模型
+                initLive2D();
+                // 设置Live2D交互
+                setupLive2DInteractions();
+            }, 500);
+
+            // 音频播放功能
+            initAudioPlayer(document.querySelector('.audio-play-btn'));
+
+
+            // 发送消息功能
+            const sendBtn = document.getElementById('send-btn');
+            const messageInput = document.getElementById('message-input');
+
+            sendBtn.addEventListener('click', sendMessage);
+            console.log('发送按钮点击事件绑定成功');
+            // 按Enter发送消息，Shift+Enter换行
+            messageInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+
+            async function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                // 禁用发送按钮，防止重复发送
+                sendBtn.disabled = true;
+                sendBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+                try {
+                    // 显示用户消息
+                    const userMessageHTML = `
+                        <div class="w-full flex items-start justify-end message-appear mt-4">
+                            <div class="flex-1 max-w-[80%]">
+                                <div class="bg-gradient-to-r from-primary to-secondary text-white rounded-2xl rounded-tr-none p-4 shadow-md ml-auto">
+                                    <p>${message}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    const aiResponseContainer = document.getElementById('ai-response-container');
+                    if (aiResponseContainer) {
+                        aiResponseContainer.innerHTML += userMessageHTML;
+                        aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+                    }
+
+                    // 在Live2D模型上显示用户消息
+                    showLive2DUserMessage(message);
+
+                    // 清空输入框
+                    messageInput.value = '';
+
+                    // 触发Live2D响应动作
+                    setTimeout(() => {
+                        // 根据消息内容触发不同的动作
+                        const responseMotions = ['mail', 'activity', 'friend'];
+                        const randomResponseMotion = responseMotions[Math.floor(Math.random() * responseMotions.length)];
+                        playLive2DMotion(randomResponseMotion);
+                    }, 500);
+
+                    // 调用AI接口获取回复
+                    await sendMessageToAPI(message);
+                } catch (error) {
+                    console.error('发送消息出错:', error);
+                    showErrorResponse('系统出错，请稍后重试。');
+                    // 恢复发送按钮状态
+                    setTimeout(() => {
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }, 1000);
+                }
+            }
+
+            // 显示错误响应
+            function showErrorResponse(errorMessage) {
+                // 首先尝试使用aiResponseContainer，如果存在
+                const aiResponseContainer = document.getElementById('ai-response-container');
+                if (aiResponseContainer) {
+                    const errorHTML = `
+                        <div class="w-full flex items-start message-appear mt-4">
+                            <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white mr-3 flex-shrink-0 shadow-sm">
+                                <i class="fa fa-exclamation-circle"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-red-50 border border-red-100 rounded-2xl rounded-tl-none p-4 shadow-md relative">
+                                    <p class="text-red-600">${errorMessage}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    aiResponseContainer.innerHTML += errorHTML;
+                    aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+                } else {
+                    // 如果aiResponseContainer不存在，使用Live2D消息气泡作为备选
+                    const messageText = document.getElementById('live2d-message-text');
+                    const messageBubble = document.getElementById('live2d-message-bubble');
+
+                    if (messageText && messageBubble) {
+                        messageText.textContent = errorMessage;
+                        messageBubble.style.opacity = '1';
+                        messageBubble.style.pointerEvents = 'auto';
+                        
+                    }
+                }
+            }
+
+            // 发送消息到API
+            async function sendMessageToAPI(message) {
+                try {
+                    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImFwcElkIjoiNjg5YWE2ZWYwNmY2YzEyYmViYWExNmNmIiwiY2xpZW50SWQiOiI2N2U2NzM2ZDE1MmE0NWM0ODE5Y2RmNGEiLCJlbWFpbCI6InRlc3RAdGVzdC50ZXN0IiwiaWQiOiI2ODlhYTZlZjA2ZjZjMTJiZWJhYTE2Y2YiLCJvcGVuaWQiOm51bGwsInBob25lIjoiMTc3Nzc3Nzc3NzciLCJ0eXBlIjoidXNlciIsInVuaW9uaWQiOm51bGwsInVzZXJJZCI6IjY4OWFhNmVmMDZmNmMxMmJlYmFhMTZjZiIsInVzZXJuYW1lIjoidGVzdCJ9LCJleHAiOjE4OTQ4NzU3NzgsImlhdCI6MTc1ODg3NTc3OCwidWlkIjoxMjM0NX0.oFMPRZcQ6hB5lVvKOiAJAPX8iYHTpfy3VACF9IwtiiU';
+
+                    // 第一步：发送消息
+                    const messageResponse = await fetch('http://127.0.0.1:8002/v1/conversations/00036f29-2b44-45d2-b5f0-dc37bcAAAAA/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`
+                        },
+                        body: JSON.stringify({
+                            content: message,
+                            role: 'user',
+                            type: 'text'
+                        })
+                    });
+
+                    const messageData = await messageResponse.json();
+
+                    if (messageData.code === 200 && messageData.data && messageData.data.id) {
+                        const messageId = messageData.data.id;
+
+                        // 显示AI回复的占位符
+                        const assistantMessageId = 'assistant-message-' + Date.now();
+                        let contentElement = null;
+                        let aiResponseContainer = null;
+
+                        // 尝试获取响应容器，如果存在则添加消息占位符
+                        aiResponseContainer = document.getElementById('ai-response-container');
+                        if (aiResponseContainer) {
+                            const assistantMessageHTML = `
+                                <div id="${assistantMessageId}" class="w-full flex items-start message-appear mt-4">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-secondary to-primary flex items-center justify-center text-white mr-3 flex-shrink-0 shadow-sm">
+                                        <i class="fa fa-butterfly"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="bg-dream-card border border-white/30 rounded-2xl rounded-tl-none p-4 shadow-md relative">
+                                            <p id="${assistantMessageId}-content" class="text-dark">
+                                                <span class="animate-pulse">思考中...</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            aiResponseContainer.innerHTML += assistantMessageHTML;
+                            aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+                            contentElement = document.getElementById(`${assistantMessageId}-content`);
+                        }
+
+                        // 在Live2D消息气泡上显示"思考中"提示
+                        const messageText = document.getElementById('live2d-message-text');
+                        const messageBubble = document.getElementById('live2d-message-bubble');
+                        if (messageText && messageBubble) {
+                            messageText.textContent = '思考中...';
+                            messageBubble.style.opacity = '1';
+                            messageBubble.style.pointerEvents = 'auto';
+                        }
+
+                        // 第二步：调用AI生成接口使用messageId（使用fetch POST请求）
+                        console.log(`使用messageId: ${messageId} 调用generate接口(POST)`);
+
+                        // 保存messageId用于后续音频合成
+                        localStorage.setItem('currentMessageId', messageId);
+
+                        let fullResponse = '';
+                        let controller = new AbortController();
+                        let signal = controller.signal;
+                        let isFinished = false;
+
+                        fetch('http://127.0.0.1:8003/v1/chat/stream/game/text', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${API_KEY}`
+                            },
+                            body: JSON.stringify({
+                                messageId: messageId,
+                                stream: true
+                            }),
+                            signal: signal
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+
+                                const reader = response.body.getReader();
+                                const decoder = new TextDecoder('utf-8');
+
+                                function readStream() {
+                                    return reader.read().then(({ done, value }) => {
+                                        if (done) {
+                                            // 完成处理
+                                            isFinished = true;
+
+                                            // 恢复发送按钮状态
+                                            setTimeout(() => {
+                                                sendBtn.disabled = false;
+                                                sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                                            }, 500);
+
+                                            // 如果有响应容器，更新UI
+                                            if (aiResponseContainer && contentElement) {
+                                                // 添加音频播放组件
+                                                const messageElement = document.getElementById(assistantMessageId);
+                                                if (messageElement) {
+                                                    const contentDiv = messageElement.querySelector('div.bg-dream-card');
+                                                    if (contentDiv) {
+                                                        const audioHTML = `
+                                                        <div class="mt-4 p-3 bg-gradient-to-r from-dream-pink/20 to-dream-purple/20 rounded-xl border border-white/30">
+                                                            <div class="flex items-center space-x-3">
+                                                                <button class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center hover:bg-secondary hover:text-white transition-all audio-play-btn">
+                                                                    <i class="fa fa-play"></i>
+                                                                </button>
+                                                                <div class="flex-1">
+                                                                    <div class="h-1.5 bg-white/50 rounded-full overflow-hidden">
+                                                                        <div class="h-full bg-secondary w-0 transition-all duration-300"></div>
+                                                                    </div>
+                                                                    <p class="text-xs text-gray-500 mt-1">0:00 / 0:00</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    `;
+
+                                                        contentDiv.innerHTML = `<p>${fullResponse}</p>${audioHTML}`;
+
+                                                        // 滚动到底部
+                                                        aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+
+                                                        // 初始化音频播放按钮
+                                                        const audioPlayBtn = contentDiv.querySelector('.audio-play-btn');
+                                                        if (audioPlayBtn) {
+                                                            initAudioPlayer(audioPlayBtn);
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // 回复完成后清除Live2D中的消息
+                                            setTimeout(() => {
+                                                const messageBubble = document.getElementById('live2d-message-bubble');
+                                                const userMessageBubble = document.getElementById('live2d-user-message-bubble');
+                                               
+                                            }, 2000);
+
+                                            return;
+                                        }
+
+                                        // 处理接收到的数据
+                                        const chunk = decoder.decode(value, { stream: true });
+                                        console.log('接收到原始数据块:', chunk);
+
+                                        // 处理标准SSE格式响应（data: {json}）
+                                        const lines = chunk.split('\n');
+                                        for (const line of lines) {
+                                            const trimmedLine = line.trim();
+                                            if (!trimmedLine) continue;
+
+                                            // 检查是否是标准SSE data事件格式
+                                            if (trimmedLine.startsWith('data:')) {
+                                                // 提取JSON部分（去掉'data: '前缀）
+                                                const jsonStr = trimmedLine.substring(5).trim();
+                                                console.log('提取的JSON字符串:', jsonStr);
+
+                                                try {
+                                                    // 解析JSON数据
+                                                    const data = JSON.parse(jsonStr);
+                                                    console.log('解析成功的数据:', data);
+
+                                                    // 检查是否有content字段
+                                                    if (data.content && !data.isFinished) {
+                                                        // 检查是否是结束标记
+                                                        // 累加响应内容
+                                                        fullResponse += data.content;
+                                                        console.log('累计响应内容:', fullResponse);
+
+                                                        // 更新contentElement内容
+                                                        if (contentElement) {
+                                                            contentElement.textContent = fullResponse;
+                                                            console.log('已更新contentElement内容');
+                                                        } else {
+                                                            console.log('contentElement不存在');
+                                                            // 如果contentElement不存在，尝试创建
+                                                            if (aiResponseContainer) {
+                                                                const newContentElement = document.createElement('div');
+                                                                newContentElement.className = 'content';
+                                                                newContentElement.textContent = fullResponse;
+                                                                aiResponseContainer.appendChild(newContentElement);
+                                                                contentElement = newContentElement;
+                                                            }
+                                                        }
+
+                                                        // 更新Live2D消息气泡
+                                                        const messageText = document.getElementById('live2d-message-text');
+                                                        const messageBubble = document.getElementById('live2d-message-bubble');
+                                                        if (messageText && messageBubble) {
+                                                            messageText.textContent = fullResponse;
+                                                            messageBubble.style.opacity = '1';
+                                                            messageBubble.style.pointerEvents = 'auto';
+                                                            console.log('已更新Live2D消息气泡内容');
+                                                        }
+                                                    }
+
+                                                    // 检查是否完成
+                                                    if (data.isFinished) {
+                                                        isFinished = true;
+                                                        console.log('接收到完成标记，SSE将断开');
+                                                        // 保存content中的id（如果有）用于todo功能和音频合成
+                                                        // 注意：isFinished为true时不将content放入消息框
+                                                        synthesizeAudio(messageId);
+                                                    }
+                                                } catch (e) {
+                                                    console.error('解析JSON错误:', e, '原始数据:', jsonStr);
+                                                }
+                                            } else {
+                                                // 尝试直接解析整行作为JSON（备用方案）
+                                                try {
+                                                    const data = JSON.parse(trimmedLine);
+                                                    console.log('直接解析JSON成功:', data);
+
+                                                    if (data.content && data.content !== '3511' && data.content !== '3505') {
+                                                        fullResponse += data.content;
+                                                        console.log('累计响应内容:', fullResponse);
+
+                                                        if (contentElement) {
+                                                            contentElement.textContent = fullResponse;
+                                                        }
+
+                                                        const messageText = document.getElementById('live2d-message-text');
+                                                        const messageBubble = document.getElementById('live2d-message-bubble');
+                                                        if (messageText && messageBubble) {
+                                                            messageText.textContent = fullResponse;
+                                                        }
+                                                    }
+
+                                                    if (data.isFinished) {
+                                                        isFinished = true;
+                                                        console.log('接收到完成标记');
+                                                    }
+                                                } catch (e) {
+                                                    console.error('直接解析失败:', e, '原始数据:', trimmedLine);
+                                                }
+                                            }
+                                        }
+
+                                        // 继续读取流
+                                        return readStream();
+                                    });
+                                }
+
+                                return readStream();
+                            })
+                            .catch(error => {
+                                console.error('请求错误:', error);
+
+                                // 如果contentElement存在，更新错误信息
+                                if (contentElement) {
+                                    contentElement.innerHTML = '对不起，我暂时无法回复。请稍后再试。';
+                                }
+
+                                // 在Live2D消息气泡上显示错误信息
+                                const messageText = document.getElementById('live2d-message-text');
+                                const messageBubble = document.getElementById('live2d-message-bubble');
+                                if (messageText && messageBubble) {
+                                    messageText.textContent = '对不起，我暂时无法回复。请稍后再试。';
+                                    messageBubble.style.opacity = '1';
+                                    messageBubble.style.pointerEvents = 'auto';
+
+                                    // 3秒后自动隐藏错误消息
+                                    setTimeout(() => {
+                                        messageBubble.style.opacity = '0';
+                                        messageBubble.style.pointerEvents = 'none';
+                                    }, 3000);
+                                }
+
+                                // 恢复发送按钮状态
+                                setTimeout(() => {
+                                    sendBtn.disabled = false;
+                                    sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                                }, 1000);
+                            });
+                    } else {
+                        throw new Error('获取消息ID失败');
+                    }
+                } catch (error) {
+                    console.error('API调用失败:', error);
+
+                    // 使用showErrorResponse函数显示错误消息
+                    showErrorResponse('消息发送失败，请检查网络连接或稍后重试。');
+
+                } finally {
+                    // 确保在API调用完成后恢复发送按钮状态
+                    setTimeout(() => {
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }, 1000);
+                }
+            }
+
+            // 音频播放器初始化函数
+            function initAudioPlayer(btn) {
+                if (!btn) return;
+
+                const progressBar = btn.parentElement.querySelector('.audio-progress');
+                const timeDisplay = btn.parentElement.querySelector('.audio-time');
+                let isPlaying = false;
+                let audioInterval;
+
+                btn.addEventListener('click', function () {
+                    if (isPlaying) {
+                        // 暂停播放
+                        clearInterval(audioInterval);
+                        btn.innerHTML = '<i class="fa fa-play"></i>';
+                    } else {
+                        // 开始播放
+                        let progress = 0;
+                        const duration = 35; // 音频长度（秒）
+
+                        audioInterval = setInterval(() => {
+                            progress += 1;
+                            const percentage = (progress / 100) * 100;
+                            progressBar.style.width = `${percentage}%`;
+
+                            // 更新时间显示
+                            const seconds = Math.floor((progress / 100) * duration);
+                            const minutes = Math.floor(seconds / 60);
+                            const displaySeconds = seconds % 60;
+                            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+
+                            if (progress >= 100) {
+                                clearInterval(audioInterval);
+                                btn.innerHTML = '<i class="fa fa-play"></i>';
+                                isPlaying = false;
+                            }
+                        }, (duration * 10)); // 计算每个百分比的时间间隔
+
+                        btn.innerHTML = '<i class="fa fa-pause"></i>';
+                    }
+
+                    isPlaying = !isPlaying;
+                });
+            }
+
+            // Live2D初始化函数
+            function initLive2D() {
+                try {
+                    // 设置canvas尺寸
+                    const canvas = document.getElementById('live2d');
+                    if (canvas) {
+                        canvas.width = 500;
+                        canvas.height = 900;
+
+                        // 等待Live2D库完全加载
+                        setTimeout(() => {
+                            // 尝试多种方式加载Live2D模型
+                            if (typeof loadlive2d === 'function') {
+                                loadlive2d('live2d', 'model/seele/model.json');
+                                console.log('使用loadlive2d函数加载模型');
+                                // 初始化动作管理器
+                                initMotionManager();
+                            } else if (typeof window.loadlive2d === 'function') {
+                                window.loadlive2d('live2d', 'model/seele/model.json');
+                                console.log('使用window.loadlive2d函数加载模型');
+                                initMotionManager();
+                            } else {
+                                console.log('loadlive2d函数未找到，尝试其他方法');
+                                // 显示一个占位符
+                                canvas.style.background = 'linear-gradient(135deg, #FFD6E0, #E6D6FF)';
+                                canvas.style.display = 'flex';
+                                canvas.style.alignItems = 'center';
+                                canvas.style.justifyContent = 'center';
+                                canvas.style.color = '#FF8A9A';
+                                canvas.style.fontSize = '24px';
+                                canvas.style.fontWeight = 'bold';
+                                canvas.innerHTML = '化梦';
+                            }
+                        }, 1000);
+                    }
+                } catch (error) {
+                    console.error('Live2D初始化失败:', error);
+                }
+            }
+
+            // 动作管理器初始化
+            function initMotionManager() {
+                // 等待模型加载完成
+                setTimeout(() => {
+                    console.log('Live2D动作管理器初始化');
+
+                    // 尝试获取Live2D模型实例
+                    window.live2dModel = getLive2DModelInstance();
+
+                    // 开始自动动作循环
+                    startAutoMotionLoop();
+
+                    // 设置定时随机动作
+                    setInterval(() => {
+                        if (Math.random() < 0.3) { // 30%概率触发随机动作
+                            triggerRandomMotion();
+                        }
+                    }, 8000); // 每8秒检查一次
+
+                }, 2000);
+            }
+
+            // 获取Live2D模型实例
+            function getLive2DModelInstance() {
+                console.log('正在搜索Live2D模型实例...');
+
+                // 尝试多种方式获取Live2D模型实例
+                const possibleObjects = [
+                    'LAppModel',
+                    'live2dModel',
+                    'LAppView',
+                    'Live2D',
+                    'L2DModel',
+                    'Model'
+                ];
+
+                for (const objName of possibleObjects) {
+                    if (typeof window[objName] !== 'undefined') {
+                        console.log('找到Live2D对象:', objName, window[objName]);
+
+                        // 如果是LAppView，尝试获取_model属性
+                        if (objName === 'LAppView' && window[objName]._model) {
+                            console.log('通过LAppView获取模型:', window[objName]._model);
+                            return window[objName]._model;
+                        }
+
+                        // 直接返回对象
+                        return window[objName];
+                    }
+                }
+
+                // 尝试从canvas元素获取
+                const canvas = document.getElementById('live2d');
+                if (canvas) {
+                    console.log('检查canvas属性:', Object.keys(canvas));
+                    if (canvas.live2dModel) {
+                        console.log('从canvas获取模型:', canvas.live2dModel);
+                        return canvas.live2dModel;
+                    }
+                }
+
+                // 尝试搜索所有全局对象
+                console.log('搜索所有全局对象...');
+                for (const key in window) {
+                    if (key.toLowerCase().includes('live2d') ||
+                        key.toLowerCase().includes('lapp') ||
+                        key.toLowerCase().includes('model')) {
+                        console.log('发现相关对象:', key, typeof window[key]);
+                    }
+                }
+
+                return null;
+            }
+
+            // 自动动作循环
+            function startAutoMotionLoop() {
+                const autoMotions = ['idle', 'morning', 'evening', 'dream'];
+                let currentIndex = 0;
+
+                setInterval(() => {
+                    if (Math.random() < 0.4) { // 40%概率播放自动动作
+                        const motion = autoMotions[currentIndex % autoMotions.length];
+                        playLive2DMotion(motion);
+                        currentIndex++;
+                    }
+                }, 12000); // 每12秒检查一次
+            }
+
+            // 播放Live2D动作
+            function playLive2DMotion(motionName) {
+                try {
+                    console.log('播放Live2D动作:', motionName);
+
+                    // 使用扩展库播放动作
+                    if (typeof window.Live2DMotionManager !== 'undefined') {
+                        const success = window.Live2DMotionManager.playMotion(motionName, 'live2d');
+                        if (success) {
+                            console.log('动作播放成功:', motionName);
+                            return;
+                        }
+                    }
+
+                    // 尝试全局函数
+                    if (typeof window.playLive2DMotion === 'function') {
+                        const success = window.playLive2DMotion(motionName, 'live2d');
+                        if (success) {
+                            console.log('通过全局函数播放成功:', motionName);
+                            return;
+                        }
+                    }
+
+                    // 如果无法调用，显示视觉反馈
+                    console.log('无法调用Live2D动作API，使用视觉反馈');
+                    showMotionFeedback(motionName);
+
+                } catch (error) {
+                    console.log('动作播放失败:', error);
+                    showMotionFeedback(motionName);
+                }
+            }
+
+            // 显示动作反馈
+            function showMotionFeedback(motionName) {
+                const canvas = document.getElementById('live2d');
+                if (!canvas) return;
+
+                // 添加动作效果类
+                canvas.classList.add('motion-effect');
+
+                // 根据动作类型添加不同的视觉效果
+                const motionEffects = {
+                    'shake': 'shake-effect',
+                    'flick_head': 'flick-effect',
+                    'tap_face': 'tap-effect',
+                    'morning': 'morning-effect',
+                    'evening': 'evening-effect',
+                    'dream': 'dream-effect',
+                    'magic': 'magic-effect',
+                    'idle': 'idle-effect'
+                };
+
+                const effectClass = motionEffects[motionName] || 'default-effect';
+                canvas.classList.add(effectClass);
+
+                // 显示动作提示
+                showToast(`化梦: ${getMotionDisplayName(motionName)}`);
+
+                // 移除效果类
+                setTimeout(() => {
+                    canvas.classList.remove('motion-effect', effectClass);
+                }, 2000);
+            }
+
+            // 获取动作显示名称
+            function getMotionDisplayName(motionName) {
+                const motionNames = {
+                    'shake': '摇头',
+                    'flick_head': '甩头',
+                    'tap_face': '摸脸',
+                    'tap_breast': '摸胸',
+                    'tap_leg': '摸腿',
+                    'tap_belly': '摸肚子',
+                    'mail': '邮件',
+                    'activity': '活动',
+                    'born': '出生',
+                    'friend': '朋友',
+                    'morning': '早安',
+                    'afternoon': '下午',
+                    'evening': '晚安',
+                    'dream': '梦境',
+                    'magic': '魔法',
+                    'idle': '待机'
+                };
+                return motionNames[motionName] || motionName;
+            }
+
+            // Live2D模型交互功能
+            function setupLive2DInteractions() {
+                const canvas = document.getElementById('live2d');
+                if (!canvas) return;
+
+                let clickCount = 0;
+                let lastClickTime = 0;
+
+                // 点击交互
+                canvas.addEventListener('click', function (e) {
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - lastClickTime;
+
+                    // 检测双击
+                    if (timeDiff < 500) {
+                        clickCount++;
+                        if (clickCount === 2) {
+                            console.log('Live2D模型被双击');
+                            if (typeof window.Live2DMotionManager !== 'undefined') {
+                                window.Live2DMotionManager.playInteractionMotion('double_click', 'live2d');
+                            } else {
+                                playLive2DMotion('magic');
+                            }
+                            clickCount = 0;
+                        }
+                    } else {
+                        clickCount = 1;
+                        console.log('Live2D模型被点击');
+
+                        // 根据点击位置触发不同动作
+                        const rect = canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        // 将坐标转换为相对位置 (0-1)
+                        const relativeX = x / rect.width;
+                        const relativeY = y / rect.height;
+
+                        // 根据点击区域触发不同动作
+                        let interactionType = 'click_body';
+                        if (relativeY < 0.3) {
+                            // 头部区域
+                            interactionType = 'click_head';
+                        } else if (relativeY < 0.6) {
+                            // 身体区域
+                            interactionType = 'click_body';
+                        } else {
+                            // 腿部区域
+                            interactionType = 'click_leg';
+                        }
+
+                        // 使用扩展库的交互动作
+                        if (typeof window.Live2DMotionManager !== 'undefined') {
+                            window.Live2DMotionManager.playInteractionMotion(interactionType, 'live2d');
+                        } else {
+                            playLive2DMotion(interactionType === 'click_head' ? 'tap_face' :
+                                interactionType === 'click_leg' ? 'tap_leg' : 'tap_belly');
+                        }
+                    }
+
+                    lastClickTime = currentTime;
+                });
+
+                // 鼠标悬停交互
+                canvas.addEventListener('mouseenter', function (e) {
+                    canvas.style.transform = 'scale(1.02)';
+                    canvas.style.transition = 'transform 0.3s ease';
+                });
+
+                canvas.addEventListener('mouseleave', function (e) {
+                    canvas.style.transform = 'scale(1)';
+                });
+
+                // 右键点击交互
+                canvas.addEventListener('contextmenu', function (e) {
+                    e.preventDefault();
+                    console.log('Live2D模型被右键点击');
+                    playLive2DMotion('shake');
+                });
+
+                // 长按交互
+                let pressTimer;
+                canvas.addEventListener('mousedown', function (e) {
+                    pressTimer = setTimeout(() => {
+                        console.log('Live2D模型被长按');
+                        playLive2DMotion('dream');
+                    }, 1000);
+                });
+
+                canvas.addEventListener('mouseup', function (e) {
+                    clearTimeout(pressTimer);
+                });
+
+                canvas.addEventListener('mouseleave', function (e) {
+                    clearTimeout(pressTimer);
+                });
+
+                // 设置控制按钮事件
+                setupControlButtons();
+            }
+
+            // 设置控制按钮功能
+            function setupControlButtons() {
+                // 表情切换按钮
+                const expressionBtn = document.getElementById('expression-btn');
+                if (expressionBtn) {
+                    expressionBtn.addEventListener('click', function () {
+                        console.log('切换表情');
+                        // 触发表情相关动作
+                        const expressionMotions = ['tap_face', 'shake', 'flick_head'];
+                        const randomExpression = expressionMotions[Math.floor(Math.random() * expressionMotions.length)];
+                        playLive2DMotion(randomExpression);
+                    });
+                }
+
+                // 语音交互按钮
+                const voiceBtn = document.getElementById('voice-btn');
+                if (voiceBtn) {
+                    voiceBtn.addEventListener('click', function () {
+                        console.log('语音交互');
+                        // 触发语音相关动作
+                        playLive2DMotion('mail');
+                        showToast('语音交互已激活');
+                    });
+                }
+
+                // 动作切换按钮
+                const motionBtn = document.getElementById('motion-btn');
+                if (motionBtn) {
+                    motionBtn.addEventListener('click', function () {
+                        console.log('切换动作');
+                        triggerRandomMotion();
+                    });
+                }
+            }
+
+            // 触发随机动作
+            function triggerRandomMotion() {
+                console.log('触发随机动作');
+
+                // 使用扩展库的随机动作功能
+                if (typeof window.Live2DMotionManager !== 'undefined') {
+                    const success = window.Live2DMotionManager.randomMotion('live2d');
+                    if (success) {
+                        console.log('随机动作播放成功');
+                        return;
+                    }
+                }
+
+                // 备用方案
+                const motions = ['shake', 'flick_head', 'tap_face', 'morning', 'evening', 'dream', 'magic', 'idle'];
+                const randomMotion = motions[Math.floor(Math.random() * motions.length)];
+                console.log('使用备用随机动作:', randomMotion);
+                playLive2DMotion(randomMotion);
+            }
+
+            // 显示提示消息
+            function showToast(message) {
+                // 创建提示元素
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300';
+                toast.textContent = message;
+
+                document.body.appendChild(toast);
+
+                // 3秒后移除
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            // Live2D消息弹出框功能
+            function showLive2DMessage(message) {
+                const messageBubble = document.getElementById('live2d-message-bubble');
+                const messageText = document.getElementById('live2d-message-text');
+
+                if (!messageBubble || !messageText) return;
+
+                // 设置消息内容
+                messageText.textContent = message;
+
+                // 显示消息
+                messageBubble.style.opacity = '1';
+                messageBubble.style.pointerEvents = 'auto';
+            }
+            
+            // 隐藏Live2D消息弹出框
+            function hideLive2DMessage() {
+                const messageBubble = document.getElementById('live2d-message-bubble');
+                if (messageBubble) {
+                    messageBubble.style.opacity = '0';
+                    messageBubble.style.pointerEvents = 'none';
+                }
+            }
+
+            // 用户消息弹出框功能
+            function showLive2DUserMessage(message, duration = 4000) {
+                const messageBubble = document.getElementById('live2d-user-message-bubble');
+                const messageText = document.getElementById('live2d-user-message-text');
+
+                if (!messageBubble || !messageText) return;
+
+                // 设置消息内容
+                messageText.textContent = message;
+
+                // 显示消息
+                messageBubble.style.opacity = '1';
+                messageBubble.style.pointerEvents = 'auto';
+
+                // 自动隐藏
+                setTimeout(() => {
+                    messageBubble.style.opacity = '0';
+                    messageBubble.style.pointerEvents = 'none';
+                }, duration);
+            }
+
+           
+            // 隐藏Live2D用户消息
+            function hideLive2DUserMessage() {
+                const messageBubble = document.getElementById('live2d-user-message-bubble');
+                if (messageBubble) {
+                    messageBubble.style.opacity = '0';
+                    messageBubble.style.pointerEvents = 'none';
+                }
+            }
+
+            // Live2D调试函数
+            function debugLive2D() {
+                const debugInfo = document.getElementById('live2d-debug-info');
+                if (!debugInfo) return;
+
+                let info = '<div class="space-y-1">';
+
+                // 检查扩展库
+                info += `<div>Live2D扩展库: ${typeof window.Live2DMotionManager !== 'undefined' ? '✓ 已加载' : '✗ 未加载'}</div>`;
+
+                // 检查loadlive2d函数
+                info += `<div>loadlive2d函数: ${typeof loadlive2d !== 'undefined' ? '✓ 存在' : '✗ 不存在'}</div>`;
+
+                // 检查全局函数
+                info += `<div>playLive2DMotion: ${typeof window.playLive2DMotion !== 'undefined' ? '✓ 存在' : '✗ 不存在'}</div>`;
+
+                // 检查扩展库状态
+                if (typeof window.Live2DMotionManager !== 'undefined') {
+                    const manager = window.Live2DMotionManager;
+                    info += `<div>注册模型数: ${manager.models.size}</div>`;
+                    info += `<div>当前模型: ${manager.currentModel || '无'}</div>`;
+                    info += `<div>正在播放: ${manager.isPlaying ? '是' : '否'}</div>`;
+                    info += `<div>动作队列: ${manager.motionQueue.length}</div>`;
+
+                    // 检查模型实例
+                    const modelInfo = manager.models.get('live2d');
+                    if (modelInfo) {
+                        info += `<div>模型实例: ✓ 已注册</div>`;
+                        info += `<div>模型路径: ${modelInfo.path}</div>`;
+                        info += `<div>可用动作: ${Object.keys(modelInfo.motions).length}个</div>`;
+                    } else {
+                        info += '<div>模型实例: ✗ 未注册</div>';
+                    }
+                }
+
+                // 检查canvas
+                const canvas = document.getElementById('live2d');
+                if (canvas) {
+                    info += `<div>Canvas: ✓ 存在 (${canvas.width}x${canvas.height})</div>`;
+                } else {
+                    info += '<div>Canvas: ✗ 不存在</div>';
+                }
+
+                info += '</div>';
+                debugInfo.innerHTML = info;
+            }
+
+            // 页面加载完成后自动运行调试
+            setTimeout(() => {
+                debugLive2D();
+
+                // 显示欢迎消息在Live2D上
+                setTimeout(() => {
+                    showLive2DMessage("欢迎来到ButterFlyDream，我是梦梦，很高兴见到你！");
+                }, 500);
+            }, 1000);
+        });
+        // 音频合成功能
+     
+
+    </script>
+</body>
+
+</html>
